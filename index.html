@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GDG Antalya — Sertifika Üretici</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Lora:ital,wght@0,400;0,700;1,400;1,700&family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;600;700&family=Great+Vibes&family=Dancing+Script:wght@400;700&family=Montserrat:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0e0e14; --surface:#16161f; --surface2:#1e1e2a;
+  --border:rgba(255,255,255,0.07); --accent:#7c5cbf; --accent2:#b08cff;
+  --text:#e8e8f0; --muted:rgba(232,232,240,0.45);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
+
+/* HEADER */
+header{padding:18px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;}
+.gdg-dots{display:flex;gap:5px;}
+.gdg-dot{width:11px;height:11px;border-radius:50%;}
+.header-title{font-size:15px;font-weight:500;}
+.header-sub{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 63px);}
+
+/* SIDEBAR */
+.sidebar{border-right:1px solid var(--border);overflow-y:auto;padding:0;display:flex;flex-direction:column;}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;background:var(--surface);}
+.tab{flex:1;padding:11px 6px;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;text-align:center;transition:all 0.2s;}
+.tab.active{color:var(--accent2);border-bottom-color:var(--accent2);}
+.tab-panel{display:none;padding:20px;flex-direction:column;gap:16px;}
+.tab-panel.active{display:flex;}
+
+/* SECTION */
+.section-label{font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--accent2);margin-bottom:8px;}
+.divider{height:1px;background:var(--border);}
+
+/* TEMPLATE CARDS */
+.template-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.template-card{border:1.5px solid var(--border);border-radius:10px;padding:14px 10px;cursor:pointer;transition:all 0.2s;text-align:center;background:var(--surface2);}
+.template-card:hover{border-color:var(--accent);}
+.template-card.active{border-color:var(--accent2);background:rgba(124,92,191,0.14);}
+.template-card .icon{font-size:22px;margin-bottom:6px;}
+.template-card .name{font-size:12px;font-weight:600;color:var(--text);}
+.template-card .desc{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* UPLOAD ZONE */
+.upload-zone{border:1.5px dashed var(--border);border-radius:9px;padding:16px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface2);position:relative;}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:rgba(124,92,191,0.06);}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.uz-icon{font-size:22px;margin-bottom:5px;}
+.uz-text{font-size:12px;font-weight:500;}
+.uz-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.uz-thumb{width:100%;height:60px;object-fit:cover;border-radius:6px;margin-top:8px;display:none;}
+.loaded .uz-icon,.loaded .uz-text,.loaded .uz-sub{display:none;}
+.loaded .uz-thumb{display:block;}
+
+/* INPUTS */
+.input-group{display:flex;flex-direction:column;gap:5px;}
+.input-group label{font-size:11px;color:var(--muted);}
+input[type=text],input[type=number]{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 11px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color 0.2s;width:100%;}
+input[type=text]:focus,input[type=number]:focus{border-color:var(--accent);}
+input[type=color]{width:100%;height:36px;border-radius:7px;border:1px solid var(--border);cursor:pointer;background:var(--surface);padding:3px;}
+select{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 11px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;cursor:pointer;}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* SLIDERS */
+.slider-wrap{display:flex;flex-direction:column;gap:12px;}
+.slider-item label{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:4px;}
+.slider-item label span{color:var(--accent2);font-weight:500;}
+input[type=range]{width:100%;height:3px;background:var(--border);border-radius:2px;outline:none;-webkit-appearance:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent2);cursor:pointer;}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.stat-num{font-size:22px;font-weight:600;color:var(--accent2);font-family:'Cormorant Garamond',serif;}
+.stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+
+/* BUTTONS */
+.btn{width:100%;padding:11px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;}
+.btn-primary:hover{opacity:0.9;transform:translateY(-1px);}
+.btn-primary:disabled{opacity:0.35;cursor:not-allowed;transform:none;}
+.btn-sm{padding:7px 14px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:5px;}
+.btn-sm-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;}
+.btn-sm-primary:disabled{opacity:0.35;cursor:not-allowed;}
+.btn-sm-outline{background:transparent;color:var(--text);border:1px solid var(--border);}
+.btn-sm-outline:hover{border-color:var(--accent);}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;}
+.main-header{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.main-header h2{font-size:13px;font-weight:500;color:var(--muted);}
+.main-actions{display:flex;gap:8px;}
+
+/* PREVIEW */
+.preview-area{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto;background:repeating-conic-gradient(rgba(255,255,255,0.02) 0% 25%,transparent 0% 50%) 0 0/20px 20px;}
+.cert-wrap{box-shadow:0 24px 64px rgba(0,0,0,0.55);border-radius:4px;overflow:hidden;}
+#certCanvas{display:block;max-width:100%;max-height:calc(100vh - 320px);}
+.empty-state{text-align:center;color:var(--muted);}
+.empty-icon{font-size:48px;margin-bottom:16px;}
+.empty-state p{font-size:14px;}
+.empty-state small{font-size:11px;opacity:0.6;}
+
+/* TABLE */
+.table-wrap{border-top:1px solid var(--border);max-height:200px;overflow-y:auto;display:none;flex-shrink:0;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead{position:sticky;top:0;background:var(--surface);z-index:1;}
+th{padding:8px 12px;text-align:left;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);}
+td{padding:8px 12px;border-bottom:1px solid var(--border);}
+tr:hover td{background:var(--surface2);}
+tr.active-row td{background:rgba(124,92,191,0.1);}
+.row-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:3px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+.row-btn:hover{border-color:var(--accent);color:var(--accent2);}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500;}
+.badge-pending{background:rgba(251,188,4,0.1);color:#fbbc04;}
+.badge-done{background:rgba(52,168,83,0.1);color:#34a853;}
+
+/* PROGRESS */
+.progress-wrap{padding:12px 24px;border-top:1px solid var(--border);display:none;flex-shrink:0;}
+.progress-label{font-size:11px;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;}
+.progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 0.3s;width:0%;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:13px;transform:translateY(60px);opacity:0;transition:all 0.3s;z-index:1000;max-width:280px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-color:rgba(52,168,83,0.4);}
+.toast.error{border-color:rgba(234,67,53,0.4);}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="gdg-dots">
+    <div class="gdg-dot" style="background:#4285F4"></div>
+    <div class="gdg-dot" style="background:#EA4335"></div>
+    <div class="gdg-dot" style="background:#FBBC04"></div>
+    <div class="gdg-dot" style="background:#34A853"></div>
+  </div>
+  <div>
+    <div class="header-title">GDG Antalya — Sertifika Üretici</div>
+    <div class="header-sub">IWD 2026 · Women Techmakers</div>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- ══ SİDEBAR ══ -->
+  <aside class="sidebar">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('sertifika',this)">Sertifika</div>
+      <div class="tab" onclick="switchTab('tasarim',this)">Tasarım</div>
+    </div>
+
+    <!-- TAB: SERTİFİKA -->
+    <div class="tab-panel active" id="tab-sertifika">
+
+      <!-- Tür -->
+      <div>
+        <div class="section-label">Sertifika Türü</div>
+        <div class="template-cards">
+          <div class="template-card active" id="card-speaker" onclick="selectTemplate('speaker',this)">
+            <div class="icon">🎤</div>
+            <div class="name">Konuşmacı</div>
+            <div class="desc">Teşekkür Belgesi</div>
+          </div>
+          <div class="template-card" id="card-participant" onclick="selectTemplate('participant',this)">
+            <div class="icon">🎟️</div>
+            <div class="name">Katılımcı</div>
+            <div class="desc">Katılım Belgesi</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PNG Yükle -->
+      <div>
+        <div class="section-label">Sertifika Görselleri</div>
+        <div style="margin-bottom:10px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:5px">🎤 Konuşmacı — Teşekkür Belgesi</div>
+          <div class="upload-zone" id="bgZoneSpeaker">
+            <input type="file" accept="image/*" onchange="loadBgFor(this,'speaker')" id="bgInputSpeaker">
+            <div class="uz-icon">🖼️</div>
+            <div class="uz-text">PNG yükle</div>
+            <div class="uz-sub">Teşekkür Belgesi görseli</div>
+            <img class="uz-thumb" id="bgThumbSpeaker">
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:5px">🎟️ Katılımcı — Katılım Belgesi</div>
+          <div class="upload-zone" id="bgZoneParticipant">
+            <input type="file" accept="image/*" onchange="loadBgFor(this,'participant')" id="bgInputParticipant">
+            <div class="uz-icon">🖼️</div>
+            <div class="uz-text">PNG yükle</div>
+            <div class="uz-sub">Katılım Belgesi görseli</div>
+            <img class="uz-thumb" id="bgThumbParticipant">
+          </div>
+        </div>
+      </div>
+
+      <!-- Excel -->
+      <div>
+        <div class="section-label">Katılımcı Listesi</div>
+        <div class="upload-zone" id="xlsZone" onclick="document.getElementById('xlsInput').click()">
+          <input type="file" id="xlsInput" accept=".xlsx,.xls,.csv" onchange="loadXls(this)" style="display:none">
+          <div class="uz-icon">📊</div>
+          <div class="uz-text">Excel / CSV yükle</div>
+          <div class="uz-sub">isim · soyisim · mail sütunları</div>
+          <img class="uz-thumb" id="xlsThumb" style="display:none">
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div>
+        <div class="section-label">Durum</div>
+        <div class="stats">
+          <div class="stat-card"><div class="stat-num" id="sTotal">0</div><div class="stat-label">Toplam</div></div>
+          <div class="stat-card"><div class="stat-num" id="sDone">0</div><div class="stat-label">Hazır</div></div>
+          <div class="stat-card"><div class="stat-num" id="sLeft">0</div><div class="stat-label">Kalan</div></div>
+        </div>
+      </div>
+
+      <!-- ZIP Button -->
+      <button class="btn btn-primary" id="btnZip" onclick="generateAll()" disabled>
+        📦 Tümünü ZIP İndir
+      </button>
+
+    </div>
+
+    <!-- TAB: TASARIM -->
+    <div class="tab-panel" id="tab-tasarim">
+
+      <!-- Test ismi -->
+      <div>
+        <div class="section-label">Test İsmi</div>
+        <div class="input-group">
+          <label>Önizlemede gösterilecek isim</label>
+          <input type="text" id="testName" value="Aykan Çakmak" oninput="redraw()">
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- İsim konumu -->
+      <div>
+        <div class="section-label">İsim Konumu</div>
+        <div class="slider-wrap">
+          <div class="slider-item">
+            <label>Yatay <span id="lbX">50%</span></label>
+            <input type="range" min="0" max="100" value="50" id="nameX" oninput="redraw()">
+          </div>
+          <div class="slider-item">
+            <label>Dikey <span id="lbY">48%</span></label>
+            <input type="range" min="0" max="100" value="48" id="nameY" oninput="redraw()">
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Yazı stili -->
+      <div>
+        <div class="section-label">İsim Yazı Stili</div>
+        <div class="input-row">
+          <div class="input-group">
+            <label>Boyut (px)</label>
+            <input type="number" id="fSize" value="64" min="20" max="160" oninput="redraw()">
+          </div>
+          <div class="input-group">
+            <label>Renk</label>
+            <input type="color" id="fColor" value="#ffffff" oninput="redraw()">
+          </div>
+        </div>
+        <div style="margin-top:10px" class="input-group">
+          <label>Font</label>
+          <select id="fFamily" onchange="redraw()">
+            <optgroup label="── El Yazısı / Kaligrafi ──">
+              <option value="Great Vibes">Great Vibes — imza tarzı</option>
+              <option value="Dancing Script">Dancing Script — yumuşak</option>
+              <option value="Cormorant Garamond">Cormorant Garamond — zarif</option>
+            </optgroup>
+            <optgroup label="── Serif / Klasik ──">
+              <option value="Playfair Display">Playfair Display — şık</option>
+              <option value="EB Garamond">EB Garamond — geleneksel</option>
+              <option value="Lora">Lora — okunaklı</option>
+              <option value="Libre Baskerville">Libre Baskerville — resmi</option>
+              <option value="Georgia">Georgia — sistem serif</option>
+              <option value="Times New Roman">Times New Roman — klasik</option>
+            </optgroup>
+            <optgroup label="── Dekoratif ──">
+              <option value="Cinzel">Cinzel — antik Roma</option>
+            </optgroup>
+            <optgroup label="── Sans-Serif / Modern ──">
+              <option value="Montserrat">Montserrat — modern</option>
+              <option value="DM Sans">DM Sans — minimal</option>
+              <option value="Arial">Arial — sade</option>
+            </optgroup>
+          </select>
+        </div>
+        <div style="margin-top:10px" class="input-group">
+          <label>Stil</label>
+          <select id="fStyle" onchange="redraw()">
+            <option value="italic">İtalik</option>
+            <option value="bold italic">Kalın İtalik</option>
+            <option value="bold">Kalın</option>
+            <option value="normal">Normal</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══ -->
+  <main class="main">
+    <div class="main-header">
+      <h2 id="previewLabel">— önizleme —</h2>
+      <div class="main-actions">
+        <button class="btn-sm btn-sm-outline" onclick="dlPreview()">⬇ Tek PDF</button>
+        <button class="btn-sm btn-sm-primary" id="btnZipTop" onclick="generateAll()" disabled>📦 ZIP İndir</button>
+      </div>
+    </div>
+
+    <div class="preview-area" id="previewArea">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">🖼️</div>
+        <p>Sertifika görselini yükle</p>
+        <small>Sol panel → PNG yükle</small>
+      </div>
+      <div class="cert-wrap" id="certWrap" style="display:none">
+        <canvas id="certCanvas"></canvas>
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-label">
+        <span id="progressText">Oluşturuluyor...</span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <div class="table-wrap" id="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>İsim</th>
+            <th>Soyisim</th>
+            <th>E-posta</th>
+            <th>Durum</th>
+            <th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let bgImgs = { speaker: null, participant: null };
+let bgImg = null;
+let people = [];
+let template = 'speaker';
+let activeIdx = -1;
+const canvas = document.getElementById('certCanvas');
+const ctx = canvas.getContext('2d');
+
+// ── TABS ──
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── TEMPLATE SELECT ──
+function selectTemplate(type, el) {
+  template = type;
+  document.querySelectorAll('.template-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  // Switch to this template's bg image
+  if (bgImgs[type]) {
+    bgImg = bgImgs[type];
+    canvas.width = bgImg.width;
+    canvas.height = bgImg.height;
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('certWrap').style.display = 'block';
+    redraw();
+    showToast('🔄 ' + (type === 'speaker' ? 'Konuşmacı' : 'Katılımcı') + ' şablonuna geçildi', 'success');
+  } else {
+    showToast('⚠️ ' + (type === 'speaker' ? 'Konuşmacı' : 'Katılımcı') + ' görseli henüz yüklenmedi', '');
+    redraw();
+  }
+}
+
+// ── LOAD BACKGROUND ──
+function loadBgFor(input, type) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      bgImgs[type] = img;
+      // If this is the active template, show it
+      if (template === type) {
+        bgImg = img;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        document.getElementById('emptyState').style.display = 'none';
+        document.getElementById('certWrap').style.display = 'block';
+        redraw();
+      }
+      // Update thumbnail
+      const thumbId = type === 'speaker' ? 'bgThumbSpeaker' : 'bgThumbParticipant';
+      const zoneId  = type === 'speaker' ? 'bgZoneSpeaker'  : 'bgZoneParticipant';
+      document.getElementById(thumbId).src = e.target.result;
+      document.getElementById(zoneId).classList.add('loaded');
+      checkReady();
+      const label = type === 'speaker' ? 'Konuşmacı' : 'Katılımcı';
+      showToast('✅ ' + label + ' görseli yüklendi!', 'success');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── DRAW ──
+function draw(name) {
+  if (!bgImg) return;
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(bgImg, 0, 0, W, H);
+
+  const xPct = +document.getElementById('nameX').value / 100;
+  const yPct = +document.getElementById('nameY').value / 100;
+  const size = +document.getElementById('fSize').value;
+  const color = document.getElementById('fColor').value;
+  const family = document.getElementById('fFamily').value;
+  const style = document.getElementById('fStyle').value;
+
+  ctx.save();
+  ctx.font = `${style} ${size}px '${family}'`;
+  ctx.fillStyle = color;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(name, W * xPct, H * yPct);
+  ctx.restore();
+
+  // Update labels
+  document.getElementById('lbX').textContent = document.getElementById('nameX').value + '%';
+  document.getElementById('lbY').textContent = document.getElementById('nameY').value + '%';
+}
+
+function redraw() {
+  const name = document.getElementById('testName').value || 'Ad Soyad';
+  draw(name);
+}
+
+// ── LOAD EXCEL ──
+function loadXls(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+      const hdrs = rows[0].map(h => h?.toString().toLowerCase().trim());
+
+      const iI = hdrs.findIndex(h => h.includes('isim') || h.includes('ad') || h === 'name' || h === 'first');
+      const sI = hdrs.findIndex(h => h.includes('soyisim') || h.includes('soyad') || h.includes('last') || h.includes('surname'));
+      const mI = hdrs.findIndex(h => h.includes('mail') || h.includes('email') || h.includes('e-posta'));
+
+      if (iI === -1) { showToast('❌ "isim" sütunu bulunamadı!', 'error'); return; }
+
+      people = rows.slice(1)
+        .filter(r => r[iI])
+        .map(r => ({
+          isim: (r[iI] || '').toString().trim(),
+          soyisim: sI >= 0 ? (r[sI] || '').toString().trim() : '',
+          mail: mI >= 0 ? (r[mI] || '').toString().trim() : '',
+          status: 'pending'
+        }));
+
+      // Update excel zone text
+      const zone = document.getElementById('xlsZone');
+      zone.querySelector('.uz-icon').textContent = '✅';
+      zone.querySelector('.uz-text').textContent = people.length + ' kişi yüklendi';
+      zone.querySelector('.uz-sub').textContent = file.name;
+
+      renderTable();
+      updateStats();
+      document.getElementById('tableWrap').style.display = 'block';
+      checkReady();
+      showToast(`✅ ${people.length} kişi yüklendi!`, 'success');
+      if (people.length > 0) previewRow(0);
+
+    } catch (err) {
+      showToast('❌ Dosya okunamadı: ' + err.message, 'error');
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ── TABLE ──
+function renderTable() {
+  document.getElementById('tableBody').innerHTML = people.map((p, i) => `
+    <tr id="row${i}" class="${i === activeIdx ? 'active-row' : ''}">
+      <td style="color:var(--muted);width:32px">${i + 1}</td>
+      <td><strong>${p.isim}</strong></td>
+      <td>${p.soyisim}</td>
+      <td style="color:var(--muted);font-size:11px">${p.mail}</td>
+      <td><span class="badge ${p.status === 'done' ? 'badge-done' : 'badge-pending'}">${p.status === 'done' ? '✓ Hazır' : '· Bekliyor'}</span></td>
+      <td style="display:flex;gap:4px;padding:6px 12px">
+        <button class="row-btn" onclick="previewRow(${i})">👁</button>
+        <button class="row-btn" onclick="dlSingle(${i})">⬇ PDF</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateStats() {
+  const done = people.filter(p => p.status === 'done').length;
+  document.getElementById('sTotal').textContent = people.length;
+  document.getElementById('sDone').textContent = done;
+  document.getElementById('sLeft').textContent = people.length - done;
+}
+
+function previewRow(i) {
+  activeIdx = i;
+  const p = people[i];
+  const full = `${p.isim} ${p.soyisim}`.trim();
+  document.getElementById('testName').value = full;
+  document.getElementById('previewLabel').textContent = full;
+  draw(full);
+  renderTable();
+  document.getElementById('row' + i)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── PDF ──
+async function makePDF(name) {
+  draw(name);
+  await new Promise(r => setTimeout(r, 80));
+  const { jsPDF } = window.jspdf;
+  const img = canvas.toDataURL('image/jpeg', 0.95);
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] });
+  pdf.addImage(img, 'JPEG', 0, 0, canvas.width, canvas.height);
+  return pdf;
+}
+
+async function dlPreview() {
+  if (!bgImg) { showToast('❌ Önce görsel yükle!', 'error'); return; }
+  const name = document.getElementById('testName').value || 'sertifika';
+  const pdf = await makePDF(name);
+  pdf.save(`sertifika-${name}.pdf`);
+}
+
+async function dlSingle(i) {
+  if (!bgImg) { showToast('❌ Önce görsel yükle!', 'error'); return; }
+  const p = people[i];
+  const name = `${p.isim} ${p.soyisim}`.trim();
+  const pdf = await makePDF(name);
+  pdf.save(`sertifika-${p.isim}-${p.soyisim}.pdf`);
+  people[i].status = 'done';
+  renderTable(); updateStats();
+}
+
+// ── GENERATE ALL ──
+async function generateAll() {
+  // Aktif şablonun PNG'sini kullan
+  if (bgImgs[template]) bgImg = bgImgs[template];
+  if (!bgImg) { showToast('❌ Önce ' + (template==='speaker'?'Konuşmacı':'Katılımcı') + ' görselini yükle!', 'error'); return; }
+  if (!people.length) { showToast('❌ Önce Excel yükle!', 'error'); return; }
+
+  const btnZ = document.getElementById('btnZip');
+  const btnT = document.getElementById('btnZipTop');
+  btnZ.disabled = btnT.disabled = true;
+  btnZ.textContent = btnT.textContent = '⏳ Oluşturuluyor...';
+  document.getElementById('progressWrap').style.display = 'block';
+
+  const zip = new JSZip();
+  const { jsPDF } = window.jspdf;
+
+  for (let i = 0; i < people.length; i++) {
+    const p = people[i];
+    const name = `${p.isim} ${p.soyisim}`.trim();
+    const pct = Math.round(((i + 1) / people.length) * 100);
+
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressPct').textContent = pct + '%';
+    document.getElementById('progressText').textContent = `${name} (${i + 1}/${people.length})`;
+
+    draw(name);
+    await new Promise(r => setTimeout(r, 60));
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.93);
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height] });
+    pdf.addImage(imgData, 'JPEG', 0, 0, canvas.width, canvas.height);
+
+    const prefix = template === 'speaker' ? 'konusmaci' : 'katilimci';
+    zip.file(`${prefix}-${p.isim}-${p.soyisim}.pdf`, pdf.output('blob'));
+
+    people[i].status = 'done';
+    renderTable(); updateStats();
+  }
+
+  document.getElementById('progressText').textContent = 'ZIP oluşturuluyor...';
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const prefix = template === 'speaker' ? 'konusmaci' : 'katilimci';
+  saveAs(blob, `gdg-antalya-iwd2026-${prefix}.zip`);
+
+  btnZ.disabled = btnT.disabled = false;
+  btnZ.textContent = '📦 Tümünü ZIP İndir';
+  btnT.textContent = '📦 ZIP İndir';
+  document.getElementById('progressWrap').style.display = 'none';
+  showToast(`🎉 ${people.length} sertifika ZIP olarak indirildi!`, 'success');
+
+  if (activeIdx >= 0) previewRow(activeIdx);
+}
+
+// ── HELPERS ──
+function checkReady() {
+  const ok = bgImgs[template] && people.length > 0;
+  document.getElementById('btnZip').disabled = !ok;
+  document.getElementById('btnZipTop').disabled = !ok;
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// Drag & drop — both zones
+['Speaker','Participant'].forEach(t => {
+  const type = t.toLowerCase();
+  const zone = document.getElementById('bgZone' + t);
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file?.type.startsWith('image/')) {
+      const inp = document.getElementById('bgInput' + t);
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      inp.files = dt.files;
+      loadBgFor(inp, type);
+    }
+  });
+});
+</script>
+</body>
+</html>
